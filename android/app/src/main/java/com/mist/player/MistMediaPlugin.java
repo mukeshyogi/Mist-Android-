@@ -10,6 +10,7 @@ import android.provider.MediaStore;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
+import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
@@ -34,6 +35,11 @@ public class MistMediaPlugin extends Plugin {
     @Override
     public void load() {
         helper = new MistMediaHelper(getContext(), this);
+    }
+
+    // FIX: Helper calls this public method instead of protected notifyListeners
+    public void emitAction(JSObject data) {
+        notifyListeners("action", data, true);
     }
 
     @PluginMethod
@@ -62,11 +68,12 @@ public class MistMediaPlugin extends Plugin {
         pendingScan = null;
     }
 
+    // FIX: getPermissionState returns PermissionState enum in Capacitor 6, not int
     private boolean hasAudioPermission() {
         if (Build.VERSION.SDK_INT >= 33) {
-            return getPermissionState("audio13") == PackageManager.PERMISSION_GRANTED;
+            return getPermissionState("audio13") == PermissionState.GRANTED;
         }
-        return getPermissionState("audioLegacy") == PackageManager.PERMISSION_GRANTED;
+        return getPermissionState("audioLegacy") == PermissionState.GRANTED;
     }
 
     private JSObject scanSongs() {
@@ -110,9 +117,7 @@ public class MistMediaPlugin extends Plugin {
                     } catch (JSONException ignored) {}
                 }
             }
-        } catch (Exception e) {
-            // return what we have
-        }
+        } catch (Exception e) {}
         try { out.put("songs", arr); } catch (JSONException ignored) {}
         return out;
     }

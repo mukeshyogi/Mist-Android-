@@ -38,13 +38,9 @@ public class MistMediaHelper {
             @Override public void onSkipToNext() { emit("next"); }
             @Override public void onSkipToPrevious() { emit("prev"); }
             @Override public void onSeekTo(long pos) {
-                com.getcapacitor.JSObject d = new com.getcapacitor.JSObject();
-                try { d.put("position", pos); } catch (Exception ignored) {}
-                plugin.notifyListeners("action", d, true);
-                // JS listens for action=seek, forward as seek with position
                 com.getcapacitor.JSObject d2 = new com.getcapacitor.JSObject();
                 try { d2.put("action", "seek"); d2.put("position", pos); } catch (Exception ignored) {}
-                plugin.notifyListeners("action", d2, true);
+                plugin.emitAction(d2);
             }
             @Override public void onStop() { emit("pause"); }
         });
@@ -54,7 +50,7 @@ public class MistMediaHelper {
     private void emit(String action) {
         com.getcapacitor.JSObject d = new com.getcapacitor.JSObject();
         try { d.put("action", action); } catch (Exception ignored) {}
-        plugin.notifyListeners("action", d, true);
+        plugin.emitAction(d);
     }
 
     private PendingIntent actionIntent(String action) {
@@ -94,7 +90,6 @@ public class MistMediaHelper {
             .addAction(android.R.drawable.ic_media_next, "Next", actionIntent("next"))
             .setStyle(new MediaStyle().setMediaSession(session.getSessionToken()).setShowActionsInCompactView(0, 1, 2))
             .build();
-        // Android 13+ needs POST_NOTIFICATIONS - if not granted, this is a no-op safely
         try { nm.notify(NOTIF_ID, n); } catch (SecurityException ignored) {}
     }
 
