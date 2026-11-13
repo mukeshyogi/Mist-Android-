@@ -9,17 +9,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: 20, cache: npm }
+        with:
+          node-version: 20
+          cache: npm
       - uses: actions/setup-java@v4
-        with: { java-version: 17, distribution: temurin }
-      - uses: android-actions/setup-android@v3
+        with:
+          java-version: 17
+          distribution: temurin
+      # NOTE: No setup-android step - GitHub runner already has Android SDK
+      # This was the step that was failing with sdkmanager exit code 1
+      - name: Accept Android licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
       - run: npm install
       - run: npm run build:web
       - run: |
           if [ ! -d "android" ]; then npx cap add android; fi
-          # re-apply MistMedia plugin files after cap add (they live in android/app/src/main/java)
           cp -r android-plugin-src/* android/app/src/main/java/ 2>/dev/null || true
-          # ensure plugin is registered - see android/app/src/main/java/com/mist/player/MainActivity.java
       - run: npx cap sync android
       - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
