@@ -16,16 +16,18 @@ jobs:
         with:
           java-version: 17
           distribution: temurin
-      # NOTE: No setup-android step - GitHub runner already has Android SDK
-      # This was the step that was failing with sdkmanager exit code 1
       - name: Accept Android licenses
         run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || true
       - run: npm install
       - run: npm run build:web
+      - name: Fix Capacitor permissions (Windows push fix)
+        run: |
+          chmod +x node_modules/.bin/cap || true
+          chmod +x node_modules/@capacitor/cli/bin/capacitor || true
       - run: |
-          if [ ! -d "android" ]; then npx cap add android; fi
+          if [ ! -d "android" ]; then node ./node_modules/@capacitor/cli/bin/capacitor add android; fi
           cp -r android-plugin-src/* android/app/src/main/java/ 2>/dev/null || true
-      - run: npx cap sync android
+      - run: node ./node_modules/@capacitor/cli/bin/capacitor sync android
       - run: cd android && chmod +x gradlew && ./gradlew assembleDebug
       - uses: actions/upload-artifact@v4
         with:
