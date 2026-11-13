@@ -274,6 +274,13 @@ html[data-theme="burnt"] .main{animation:unroll .95s var(--soft) backwards}
 .dlg{animation:enter .5s var(--spring)}
 .scrim{animation:fadeIn .25s}
 .toast{animation:toastIn .5s var(--spring)}
+/* --- CONTINUOUS scan progress (one bar, no flicker) --- */
+#scanProgress{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:9999;width:min(320px,calc(100% - 40px));background:var(--bg);border:1.5px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:12px 14px;display:none}
+#scanProgress.show{display:block}
+#scanProgress .sp-top{display:flex;justify-content:space-between;font-size:12px;letter-spacing:.04em;margin-bottom:8px}
+#scanProgress .sp-bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+#scanProgress .sp-fill{height:100%;width:0%;background:var(--ink);border-radius:99px;transition:width .15s linear}
+#scanProgress .sp-sub{font-size:11px;color:var(--sub);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cb svg{transform:scale(.3);transition:transform .35s var(--spring)}
 .row.picked .cb svg{transform:scale(1)}
 /* theme discs */
@@ -456,7 +463,7 @@ kbd{display:inline-block;min-width:22px;padding:2px 7px;border:1.5px solid var(-
   <div id="screen"></div>
   <div id="bar" class="bar"></div>
   <div id="overlay"></div>
-  <div id="toasts"></div>
+  <div id="toasts"></div><div id="scanProgress" role="status" aria-live="polite"><div class="sp-top"><span id="spLabel">Adding songs…</span><span id="spCount">0 / 0</span></div><div class="sp-bar"><div class="sp-fill" id="spFill"></div></div><div class="sp-sub" id="spSub"></div></div>
   <svg class="fx gl" aria-hidden="true" width="100%" height="100%" style="position:absolute;inset:0"><filter id="gnL" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 0.30  0 0 0 0 0.28  0 0 0 0 0.24  1.3 0 0 0 -0.52"/></filter><rect width="100%" height="100%" filter="url(#gnL)"/></svg>
   <svg class="fx gd" aria-hidden="true" width="100%" height="100%" style="position:absolute;inset:0"><filter id="gnD" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 0.62  0 0 0 0 0.60  0 0 0 0 0.56  1.3 0 0 0 -0.56"/></filter><rect width="100%" height="100%" filter="url(#gnD)"/></svg>
   <div class="fx vig" aria-hidden="true"></div>
@@ -930,7 +937,7 @@ function startAt(i){
   const id=S.queue[i],s=S.byId.get(id);if(!s)return;
   S.qi=i;loadTok++;
   if(curUrl){URL.revokeObjectURL(curUrl);curUrl=null}
-  if(s.path&&CAP){ try{ audio.src=(CAP.convertFileSrc?CAP.convertFileSrc('file://'+encodeURI(s.path).replace(/[#?]/g,c=>encodeURIComponent(c))):('file://'+s.path)); }catch(e){ audio.src='file://'+s.path; } }
+  if(s.path&&CAP){ try{ audio.src=(s.path.indexOf('content://')===0 ? (CAP.convertFileSrc?CAP.convertFileSrc(s.path):s.path) : (CAP.convertFileSrc?CAP.convertFileSrc('file://'+encodeURI(s.path).replace(/[#?]/g,c=>encodeURIComponent(c))):('file://'+s.path))); }catch(e){ audio.src=s.path; } }
   else if(s.path&&DESK){audio.pause();deskLoad(s,loadTok)}
   else{curUrl=URL.createObjectURL(s.file);audio.src=curUrl}
   if(!(s.path&&DESK&&!CAP)){const pr=audio.play();if(pr&&pr.catch)pr.catch(()=>{setPlayBtn()});}
@@ -1026,23 +1033,55 @@ function getDur(file){
     setTimeout(()=>fin(0),6000);a.src=u;
   });
 }
+/* --- Continuous progress: update bar, don't rebuild toast every song --- */
+let _spLast=0;
+function showScanProgress(total, label){ const el=$('#scanProgress'); if(!el) return; el.classList.add('show'); $('#spLabel').textContent=label||'Adding songs…'; $('#spCount').textContent='0 / '+total; $('#spFill').style.width='0%'; $('#spSub').textContent=''; _spLast=0; }
+function updateScanProgress(i, total, name){ const now=performance.now(); if(now-_spLast<120 && i<total) return; _spLast=now; const el=$('#scanProgress'); if(!el) return; $('#spCount').textContent=i+' / '+total; $('#spFill').style.width=Math.round((i/total)*100)+'%'; if(name) $('#spSub').textContent=name; }
+function hideScanProgress(){ const el=$('#scanProgress'); if(el) el.classList.remove('show'); }
+
 async function ingest(fileList){
   const files=[...fileList].filter(isAudio);
   if(!files.length){toast('No audio files found');return}
   let n=0,i=0;
+  showScanProgress(files.length, 'Adding songs…');
+  try{
   for(const f of files){
     i++;
-    const id=f.name+'|'+f.size+'|'+f.lastModified;if(S.byId.has(id))continue;
-    toast('Scanning '+i+' of '+files.length,{sticky:true});
+    const id=f.name+'|'+f.size+'|'+f.lastModified;if(S.byId.has(id)){updateScanProgress(i, files.length, f.name); continue;}
+    updateScanProgress(i, files.length, f.name);
     const rel=f.webkitRelativePath,source=rel?rel.split('/')[0]:'Individual files';
     const meta=await readMeta(f),dur=await getDur(f);
     const s={id:id,title:meta.title,artist:meta.artist,dur:dur,added:Date.now()+i,plays:0,source:source,file:f};
     addMem(s);DB.put(s);n++;
     if(n%20===0)refresh();
   }
+  } finally { hideScanProgress(); }
   save();refresh();
   toast(n?'Added '+n+(n===1?' song':' songs'):'Those songs are already here');
 }
+/* --- NATIVE Add Folder: real folder picker (SAF) --- */
+async function nativePickFolder(){
+  if(!MM) return;
+  showScanProgress(1, 'Opening folder…');
+  let r;
+  try{ r=await MM.pickFolder(); }catch(e){ hideScanProgress(); toast(e&&e.message?String(e.message).replace('Folder not selected','No folder selected'):'No folder selected'); return; }
+  const list=(r&&r.songs)||[], folder=(r&&r.folder)||'Music';
+  if(!list.length){ hideScanProgress(); toast('No songs in this folder'); return; }
+  showScanProgress(list.length, 'Adding from '+folder+'…');
+  let n=0, i=0;
+  for(const x of list){
+    i++; updateScanProgress(i, list.length, x.name||'');
+    const id='saf:'+x.uri; if(S.byId.has(id)) continue;
+    // Title from filename, strip extension
+    const base=(x.name||'Untitled').replace(/\.[a-z0-9]+$/i,'');
+    const s={id:id,title:base,artist:'Unknown artist',dur:0,added:Date.now()+i,plays:0,source:folder,path:x.uri};
+    addMem(s); DB.put(s); n++;
+    if(n%20===0) refresh();
+  }
+  hideScanProgress(); save(); refresh();
+  toast(n?'Added '+n+(n===1?' song':' songs')+' from '+folder:'Those songs are already here');
+}
+/* SAF songs: path is content:// URI - play via Capacitor convertFileSrc */
 async function nativeScan(quiet){
   if(!MM)return;
   if(!quiet)toast('Scanning music…',{sticky:true});
@@ -1184,10 +1223,11 @@ async function rescan(){
   if(DESK&&(S.settings.folders||[]).length)await deskScan(false);
   const all=S.songs.filter(s=>s.file);
   if(!all.length)return;let i=0;
-  for(const s of all){i++;toast('Scanning '+i+' of '+all.length,{sticky:true});
+  showScanProgress(all.length, 'Scanning songs…');
+  for(const s of all){i++;updateScanProgress(i, all.length, s.title);
     const m=await readMeta(s.file),d=await getDur(s.file);
     if(!/^sample-/.test(s.id)){s.title=m.title;s.artist=m.artist}if(d)s.dur=d;await DB.put(s)}
-  refresh();toast('Scanned '+all.length+(all.length===1?' song':' songs'));
+  hideScanProgress();refresh();toast('Scanned '+all.length+(all.length===1?' song':' songs'));
 }
 function removeSource(name){
   if(S.settings.folders){S.settings.folders=S.settings.folders.filter(d=>baseName(d)!==name);if(DESK)DESK.watch(S.settings.folders)}
@@ -1353,7 +1393,7 @@ document.addEventListener('click',e=>{
     case 'pause':togglePlay();break;
     case 'next':next(false);break;
     case 'toast-act':{const f=toast.fn;untoast();if(f)f();break}
-    case 'addfolder':if(DESK)deskAddFolder();else $('#dirIn').click();break;
+    case 'addfolder':if(DESK)deskAddFolder();else if(NATIVE&&MM)nativePickFolder();else $('#dirIn').click();break;
     case 'addfiles':$('#fileIn').click();break;
     case 'scan':rescan();break;
     case 'delsrc':{const n=el.dataset.src;if(S.confirmSrc===n){S.confirmSrc=null;removeSource(n);renderScreen();toast('Removed '+n)}else{S.confirmSrc=n;renderScreen()}break}
