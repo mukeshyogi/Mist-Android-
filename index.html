@@ -219,14 +219,45 @@ html[data-theme="burnt"] .fx.burn,html[data-theme="burnt"] .fx.ember,html[data-t
 /* coffee stains, fold creases - drifting very slowly */
 .fx.stain{inset:0;background:radial-gradient(ellipse 40% 25% at 18% 24%,rgba(140,84,20,.14),transparent 70%),radial-gradient(ellipse 32% 22% at 82% 68%,rgba(120,70,16,.12),transparent 72%);contain:strict}
 /* scorched, ragged edges */
-.fx.burn{inset:0;background:radial-gradient(ellipse 120% 110% at 50% 50%,transparent 55%,rgba(96,48,8,.18) 72%,rgba(50,20,3,.45) 88%,rgba(18,7,1,.65) 100%);contain:strict;will-change:opacity}
+.fx.burn{inset:0;contain:strict;will-change:opacity;
+  /* SCREEN-FIT BURN: 4 fixed edges + 4 corners, NOT one big ellipse.
+     Old code used ellipse 120% - on tall phones the dark part fell OFF-screen,
+     so you only saw the middle yellow. This version pins burn to the actual edges. */
+  --burn:var(--burn-size,34px);
+  background:
+    /* corners - darkest, always visible */
+    radial-gradient(circle at 0 0, rgba(18,7,1,.92) 0, rgba(50,20,3,.70) 38%, transparent 70%),
+    radial-gradient(circle at 100% 0, rgba(18,7,1,.92) 0, rgba(50,20,3,.70) 38%, transparent 70%),
+    radial-gradient(circle at 0 100%, rgba(18,7,1,.92) 0, rgba(50,20,3,.70) 38%, transparent 70%),
+    radial-gradient(circle at 100% 100%, rgba(18,7,1,.92) 0, rgba(50,20,3,.70) 38%, transparent 70%),
+    /* top edge */
+    linear-gradient(to bottom, rgba(26,10,2,.85) 0, rgba(96,48,8,.55) 42%, rgba(96,48,8,.18) 78%, transparent 100%),
+    /* bottom edge */
+    linear-gradient(to top, rgba(26,10,2,.85) 0, rgba(96,48,8,.55) 42%, rgba(96,48,8,.18) 78%, transparent 100%),
+    /* left edge */
+    linear-gradient(to right, rgba(26,10,2,.80) 0, rgba(96,48,8,.50) 42%, rgba(96,48,8,.15) 78%, transparent 100%),
+    /* right edge */
+    linear-gradient(to left, rgba(26,10,2,.80) 0, rgba(96,48,8,.50) 42%, rgba(96,48,8,.15) 78%, transparent 100%);
+  background-repeat:no-repeat;
+  background-size:calc(var(--burn)*3.2) calc(var(--burn)*3.2),calc(var(--burn)*3.2) calc(var(--burn)*3.2),calc(var(--burn)*3.2) calc(var(--burn)*3.2),calc(var(--burn)*3.2) calc(var(--burn)*3.2),100% var(--burn),100% var(--burn),var(--burn) 100%,var(--burn) 100%;
+  background-position:0 0,100% 0,0 100%,100% 100%,top left,bottom left,top left,top right;
+}
 /* glowing ember line riding the burn - flickers (opacity only: runs on the GPU) */
-.fx.ember{inset:0;background:radial-gradient(ellipse 105% 95% at 50% 50%,transparent 68%,rgba(255,150,40,.18) 82%,rgba(255,128,30,.28) 90%,rgba(255,206,100,.12) 96%,transparent 100%);animation:emberFlick 5s ease-in-out infinite;will-change:opacity;contain:strict}
+.fx.ember{inset:0;animation:emberFlick 5s ease-in-out infinite;will-change:opacity;contain:strict;
+  --burn:var(--burn-size,34px);
+  background:
+    linear-gradient(to bottom, transparent 0, rgba(255,150,40,.22) calc(var(--burn)*0.55), transparent var(--burn)),
+    linear-gradient(to top, transparent 0, rgba(255,150,40,.22) calc(var(--burn)*0.55), transparent var(--burn)),
+    linear-gradient(to right, transparent 0, rgba(255,128,30,.20) calc(var(--burn)*0.55), transparent var(--burn)),
+    linear-gradient(to left, transparent 0, rgba(255,128,30,.20) calc(var(--burn)*0.55), transparent var(--burn));
+  background-repeat:no-repeat; background-size:100% var(--burn),100% var(--burn),var(--burn) 100%,var(--burn) 100%;
+  background-position:top left,bottom left,top left,top right;
+}
 @keyframes emberFlick{0%{opacity:.55}7%{opacity:.95}
 /* --- BURNT PERFORMANCE FIX: no expensive filters / shadows on mobile --- */
 html[data-theme="burnt"] .app{text-shadow:none}
 html[data-theme="burnt"] .fx{transform:translateZ(0);backface-visibility:hidden}
-html[data-theme="burnt"] .fx.vig{box-shadow:none;background:radial-gradient(ellipse 100% 100% at 50% 50%,transparent 60%,rgba(120,58,12,.18) 100%)}
+html[data-theme="burnt"] .fx.vig{box-shadow:none;background:radial-gradient(ellipse 130% 130% at 50% 50%,transparent 58%,rgba(120,58,12,.16) 100%)}
 html[data-theme="burnt"] .dlg{box-shadow:4px 4px 0 var(--ink)}
 html[data-theme="burnt"] .fx.gl,html[data-theme="burnt"] .fx.gd{display:none} /* grain SVG filter is the biggest GPU cost - burnt already has texture */
 html[data-theme="burnt"] .th .disc.y::after{animation:none}
@@ -274,6 +305,23 @@ html[data-theme="burnt"] .main{animation:unroll .95s var(--soft) backwards}
 .dlg{animation:enter .5s var(--spring)}
 .scrim{animation:fadeIn .25s}
 .toast{animation:toastIn .5s var(--spring)}
+
+/* --- BURNT SCREEN-FIT: auto size for any phone / PC --- */
+html[data-theme="burnt"]{ --burn-size:34px; }
+@media (max-width:600px){ html[data-theme="burnt"]{ --burn-size:26px; } }
+@media (max-width:380px){ html[data-theme="burnt"]{ --burn-size:22px; } }
+@media (min-width:900px){ html[data-theme="burnt"]{ --burn-size:44px; } }
+/* Tall phones: burn must not be squeezed - keep edges visible */
+@media (max-aspect-ratio: 9/16){ html[data-theme="burnt"]{ --burn-size:30px; } }
+/* Never clip the burn: app must fill viewport, no rounded outer cut */
+html[data-theme="burnt"] body{ background:#2A1202; }
+html[data-theme="burnt"] .app{ border-radius:0; overflow:hidden; }
+@media (max-width:600px){ html[data-theme="burnt"] .app{ border:none; box-shadow:none; } }
+/* Outer burnt frame - always on top of everything, shows even when scrolling */
+html[data-theme="burnt"] body::after{ content:""; position:fixed; inset:0; z-index:9998; pointer-events:none;
+  box-shadow: inset 0 0 0 2px rgba(18,7,1,.55), inset 0 0 28px rgba(18,7,1,.35);
+}
+
 /* --- CONTINUOUS scan progress (one bar, no flicker) --- */
 #scanProgress{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:9999;width:min(320px,calc(100% - 40px));background:var(--bg);border:1.5px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:12px 14px;display:none}
 #scanProgress.show{display:block}
@@ -281,6 +329,17 @@ html[data-theme="burnt"] .main{animation:unroll .95s var(--soft) backwards}
 #scanProgress .sp-bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
 #scanProgress .sp-fill{height:100%;width:0%;background:var(--ink);border-radius:99px;transition:width .15s linear}
 #scanProgress .sp-sub{font-size:11px;color:var(--sub);margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#folderPicker{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.45);display:none;align-items:flex-end;justify-content:center}
+#folderPicker.show{display:flex}
+#folderPicker .fp-card{width:100%;max-width:520px;max-height:75vh;background:var(--bg);border:2px solid var(--ink);border-bottom:none;box-shadow:0 -6px 0 rgba(0,0,0,.15);display:flex;flex-direction:column;overflow:hidden}
+#folderPicker .fp-head{padding:14px 16px;border-bottom:1.5px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+#folderPicker .fp-head b{font-size:15px}
+#folderPicker .fp-list{overflow:auto;padding:8px}
+#folderPicker .fp-item{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 10px;border:1.5px solid var(--line);margin-bottom:8px;cursor:pointer;background:var(--card)}
+#folderPicker .fp-item:active{transform:translateY(1px)}
+#folderPicker .fp-item .fp-name{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#folderPicker .fp-item .fp-path{font-size:11px;color:var(--sub);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#folderPicker .fp-count{font-size:12px;white-space:nowrap;background:var(--ink);color:var(--bg);padding:3px 8px;border-radius:99px}
 .cb svg{transform:scale(.3);transition:transform .35s var(--spring)}
 .row.picked .cb svg{transform:scale(1)}
 /* theme discs */
@@ -463,7 +522,7 @@ kbd{display:inline-block;min-width:22px;padding:2px 7px;border:1.5px solid var(-
   <div id="screen"></div>
   <div id="bar" class="bar"></div>
   <div id="overlay"></div>
-  <div id="toasts"></div><div id="scanProgress" role="status" aria-live="polite"><div class="sp-top"><span id="spLabel">Adding songs…</span><span id="spCount">0 / 0</span></div><div class="sp-bar"><div class="sp-fill" id="spFill"></div></div><div class="sp-sub" id="spSub"></div></div>
+  <div id="toasts"></div><div id="scanProgress" role="status" aria-live="polite"><div class="sp-top"><span id="spLabel">Adding songs…</span><span id="spCount">0 / 0</span></div><div class="sp-bar"><div class="sp-fill" id="spFill"></div></div><div id="folderPicker"><div class="fp-card"><div class="fp-head"><b>📁 Choose a folder</b><button data-act="close-folder-picker" style="font-size:20px;line-height:1;background:none;border:none;cursor:pointer">✕</button></div><div class="fp-list" id="fpList"><div style="padding:20px;text-align:center;color:var(--sub)">Loading folders…</div></div><div style="padding:10px 14px;border-top:1.5px solid var(--line);font-size:11px;color:var(--sub)">Tap a folder → adds ALL songs inside it. No song-by-song picking.</div></div></div><div class="sp-sub" id="spSub"></div></div>
   <svg class="fx gl" aria-hidden="true" width="100%" height="100%" style="position:absolute;inset:0"><filter id="gnL" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 0.30  0 0 0 0 0.28  0 0 0 0 0.24  1.3 0 0 0 -0.52"/></filter><rect width="100%" height="100%" filter="url(#gnL)"/></svg>
   <svg class="fx gd" aria-hidden="true" width="100%" height="100%" style="position:absolute;inset:0"><filter id="gnD" x="0" y="0" width="100%" height="100%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="7" stitchTiles="stitch"/><feColorMatrix type="matrix" values="0 0 0 0 0.62  0 0 0 0 0.60  0 0 0 0 0.56  1.3 0 0 0 -0.56"/></filter><rect width="100%" height="100%" filter="url(#gnD)"/></svg>
   <div class="fx vig" aria-hidden="true"></div>
@@ -945,13 +1004,27 @@ function startAt(i){
   renderBar();markRows();nativeSync();
   try{if('mediaSession' in navigator){const ic=document.querySelector('link[rel=icon]');navigator.mediaSession.metadata=new MediaMetadata(Object.assign({title:s.title,artist:s.artist,album:'Mist'},ic?{artwork:[{src:ic.href,sizes:'64x64',type:'image/png'}]}:{}));try{navigator.mediaSession.setActionHandler('seekto',d=>{if(d&&d.seekTime!=null)audio.currentTime=d.seekTime})}catch(e){}}}catch(e){}
 }
+let _notifAsked=false;
+async function askNotif(){
+  if(_notifAsked||!NATIVE||!MM) return; _notifAsked=true;
+  try{ if(MM.requestNotif) await MM.requestNotif(); }catch(e){}
+}
+let _lastSync=0;
+function nativeSyncThrottled(){
+  const now=Date.now(); if(now-_lastSync<1000) return; _lastSync=now; nativeSync();
+}
 function nativeSync(){
   if(!MM)return;
+  askNotif();
   const s=curSong();
   if(!s){MM.stop().catch(()=>{});return}
   const d=isFinite(audio.duration)&&audio.duration>0?audio.duration:s.dur;
   MM.update({title:s.title,artist:s.artist,playing:!audio.paused,position:Math.round((audio.currentTime||0)*1000),duration:Math.round((d||0)*1000)}).catch(()=>{});
 }
+audio.addEventListener('timeupdate',()=>{ if(!audio.paused) nativeSyncThrottled(); });
+audio.addEventListener('play',()=>{ askNotif(); nativeSync(); });
+audio.addEventListener('pause',()=>{ nativeSync(); });
+window.addEventListener('mist-media-action',e=>{ const a=String(e.detail||'').toLowerCase(); if(a==='play') playResume(); else if(a==='pause') pauseSong(); else if(a==='next') next(); else if(a==='prev') prev(); else if(a==='seek'&&e.detail&&e.detail.position!=null) audio.currentTime=e.detail.position/1000; });
 function prev(){
   if(!S.queue.length)return;
   if((audio.currentTime||0)>3||S.qi<=0){audio.currentTime=0;return}
@@ -1034,6 +1107,21 @@ function getDur(file){
   });
 }
 /* --- Continuous progress: update bar, don't rebuild toast every song --- */
+/* --- BURNT auto-fit: set burn size from real screen size --- */
+function fitBurnt(){
+  if(document.documentElement.getAttribute('data-theme')!=='burnt') return;
+  const w=window.innerWidth, h=window.innerHeight;
+  const shortest=Math.min(w,h);
+  // Burn = ~6% of shortest side, clamped 20-46px - works on any phone/PC
+  const burn=Math.max(20, Math.min(46, Math.round(shortest*0.062)));
+  document.documentElement.style.setProperty('--burn-size', burn+'px');
+}
+window.addEventListener('resize', fitBurnt);
+window.addEventListener('orientationchange', ()=>setTimeout(fitBurnt, 150));
+// Re-fit whenever theme changes
+const _burnObs=new MutationObserver(fitBurnt);
+_burnObs.observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
+setTimeout(fitBurnt, 100);
 let _spLast=0;
 function showScanProgress(total, label){ const el=$('#scanProgress'); if(!el) return; el.classList.add('show'); $('#spLabel').textContent=label||'Adding songs…'; $('#spCount').textContent='0 / '+total; $('#spFill').style.width='0%'; $('#spSub').textContent=''; _spLast=0; }
 function updateScanProgress(i, total, name){ const now=performance.now(); if(now-_spLast<120 && i<total) return; _spLast=now; const el=$('#scanProgress'); if(!el) return; $('#spCount').textContent=i+' / '+total; $('#spFill').style.width=Math.round((i/total)*100)+'%'; if(name) $('#spSub').textContent=name; }
@@ -1042,26 +1130,51 @@ function hideScanProgress(){ const el=$('#scanProgress'); if(el) el.classList.re
 async function ingest(fileList){
   const files=[...fileList].filter(isAudio);
   if(!files.length){toast('No audio files found');return}
-  let n=0,i=0;
   showScanProgress(files.length, 'Adding songs…');
-  try{
-  for(const f of files){
-    i++;
-    const id=f.name+'|'+f.size+'|'+f.lastModified;if(S.byId.has(id)){updateScanProgress(i, files.length, f.name); continue;}
-    updateScanProgress(i, files.length, f.name);
-    const rel=f.webkitRelativePath,source=rel?rel.split('/')[0]:'Individual files';
-    const meta=await readMeta(f),dur=await getDur(f);
-    const s={id:id,title:meta.title,artist:meta.artist,dur:dur,added:Date.now()+i,plays:0,source:source,file:f};
-    addMem(s);DB.put(s);n++;
-    if(n%20===0)refresh();
+  // FAST: Process 8 files at a time in parallel, don't wait for duration.
+  // Duration is filled in background after songs appear - so list shows instantly.
+  const fresh=files.filter(f=>!S.byId.has(f.name+'|'+f.size+'|'+f.lastModified));
+  if(!fresh.length){ hideScanProgress(); toast('Those songs are already here'); return; }
+  const CONC=8; let done=0, n=0;
+  const pendingDur=[];
+  for(let start=0; start<fresh.length; start+=CONC){
+    const batch=fresh.slice(start, start+CONC);
+    const results=await Promise.all(batch.map(async(f)=>{
+      const id=f.name+'|'+f.size+'|'+f.lastModified;
+      const rel=f.webkitRelativePath, source=rel?rel.split('/')[0]:'Individual files';
+      // readMeta only (fast, reads first bytes) - NO getDur here
+      let meta={title:'',artist:''}; try{ meta=await readMeta(f); }catch(e){}
+      return {id:id,title:meta.title||f.name.replace(/\.[a-z0-9]+$/i,''),artist:meta.artist||'Unknown artist',dur:0,added:Date.now()+done,plays:0,source:source,file:f};
+    }));
+    results.forEach(s=>{ addMem(s); try{DB.put(s);}catch(e){} pendingDur.push(s); n++; });
+    done+=results.length;
+    updateScanProgress(done, files.length, results[results.length-1]?.title||'');
+    // Yield so UI doesn't freeze
+    await new Promise(res=>setTimeout(res,0));
   }
-  } finally { hideScanProgress(); }
-  save();refresh();
-  toast(n?'Added '+n+(n===1?' song':' songs'):'Those songs are already here');
+  hideScanProgress(); save(); refresh();
+  toast('Added '+n+(n===1?' song':' songs'));
+  // Background: fill durations slowly, without blocking UI
+  (async()=>{
+    for(const s of pendingDur){
+      try{ const d=await getDur(s.file); if(d){ s.dur=d; await DB.put(s); } }catch(e){}
+      await new Promise(res=>setTimeout(res,10));
+    }
+    refresh();
+  })();
 }
 /* --- NATIVE Add Folder: real folder picker (SAF) --- */
 async function nativePickFolder(){
   if(!MM) return;
+  // NEW: Show Mist's own folder list - never opens Android Files app
+  if(MM.listFolders){
+    try{
+      const r=await MM.listFolders();
+      const folders=(r&&r.folders)||[];
+      if(folders.length){ showFolderPicker(folders); return; }
+    }catch(e){ /* fall through to SAF */ }
+  }
+  // Fallback: SAF picker (old path)
   showScanProgress(1, 'Opening folder…');
   let r;
   try{ r=await MM.pickFolder(); }catch(e){ hideScanProgress(); toast(e&&e.message?String(e.message).replace('Folder not selected','No folder selected'):'No folder selected'); return; }
@@ -1081,6 +1194,66 @@ async function nativePickFolder(){
   hideScanProgress(); save(); refresh();
   toast(n?'Added '+n+(n===1?' song':' songs')+' from '+folder:'Those songs are already here');
 }
+function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+function showFolderPicker(folders){
+  const picker=$('#folderPicker'), list=$('#fpList');
+  if(!picker||!list) return;
+  // Sort: most songs first
+  folders.sort((a,b)=>(b.count||0)-(a.count||0));
+  list.innerHTML=folders.map((f,i)=>`<div class="fp-item" data-fp="${i}"><div style="min-width:0"><div class="fp-name">📁 ${escapeHtml(f.folder||'Music')}</div><div class="fp-path">${escapeHtml(f.path||'')}</div></div><span class="fp-count">${f.count||0} songs</span></div>`).join('');
+  // Store for click handler
+  picker._folders=folders;
+  picker.classList.add('show');
+}
+function hideFolderPicker(){ const p=$('#folderPicker'); if(p) p.classList.remove('show'); }
+document.addEventListener('click',e=>{
+  const closeBtn=e.target.closest('[data-act="close-folder-picker"]');
+  if(closeBtn){ hideFolderPicker(); return; }
+  const item=e.target.closest('#folderPicker .fp-item');
+  if(item){
+    const picker=$('#folderPicker'); const folders=picker?picker._folders||[]:[]; const idx=parseInt(item.getAttribute('data-fp'),10);
+    if(folders[idx]) nativeAddFolder(folders[idx]);
+    return;
+  }
+  if(e.target.id==='folderPicker'){ hideFolderPicker(); }
+});
+async function nativeAddFolder(folderObj){
+  hideFolderPicker();
+  const t0 = performance.now();
+  let r;
+  try{ r=await MM.scan(); }catch(e){ toast('Allow music access'); return; }
+  const list=(r&&r.songs)||[];
+  const wantPath=String(folderObj.path||'');
+  const wantName=String(folderObj.folder||'');
+  const inFolder=list.filter(x=>{
+    const p=String(x.path||'');
+    if(wantPath && p.indexOf(wantPath)===0) return true;
+    return String(x.folder||'')===wantName;
+  });
+  if(!inFolder.length){ toast('No songs in this folder'); return; }
+  // FAST PATH: MediaStore already has title/artist/duration - no readMeta, no getDur, no per-file open
+  showScanProgress(inFolder.length, 'Adding from '+wantName+'…');
+  const toAdd=[];
+  for(const x of inFolder){
+    const id='ms:'+x.id; if(S.byId.has(id)) continue;
+    toAdd.push({id:id,title:x.title||'Untitled',artist:x.artist||'Unknown artist',dur:(x.duration||0)/1000,added:(x.added||0)*1000,plays:0,source:x.folder||wantName,path:x.path});
+  }
+  // Batch insert: add to memory in one go, DB.put in chunks, refresh ONCE
+  const CHUNK=100;
+  for(let c=0;c<toAdd.length;c+=CHUNK){
+    const slice=toAdd.slice(c,c+CHUNK);
+    slice.forEach(s=>addMem(s));
+    // DB.put is async but we don't await each one - fire and let it flush
+    slice.forEach(s=>{ try{DB.put(s);}catch(e){} });
+    updateScanProgress(Math.min(c+CHUNK, inFolder.length), inFolder.length, slice[slice.length-1]?.title||'');
+    // Yield to UI so progress bar stays smooth, not frozen
+    await new Promise(res=>setTimeout(res,0));
+  }
+  hideScanProgress(); save(); refresh();
+  const secs=((performance.now()-t0)/1000).toFixed(1);
+  toast(toAdd.length?('Added '+toAdd.length+(toAdd.length===1?' song':' songs')+' from '+wantName+' in '+secs+'s'):'Those songs are already here');
+}
+
 /* SAF songs: path is content:// URI - play via Capacitor convertFileSrc */
 async function nativeScan(quiet){
   if(!MM)return;
@@ -1088,6 +1261,7 @@ async function nativeScan(quiet){
   let r;
   try{r=await MM.scan()}catch(e){if(!quiet)toast('Allow music access to find your songs');return}
   const list=(r&&r.songs)||[],seen=new Set();let added=0;
+  // FAST: MediaStore duration used directly, no file re-read. Refresh only once at end.
   list.forEach(x=>{
     const id='ms:'+x.id;seen.add(id);
     const dur=(x.duration||0)/1000;

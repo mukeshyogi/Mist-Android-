@@ -1,15 +1,12 @@
 package com.mist.player;
 
 import android.Manifest;
-import android.app.Activity;
 import android.content.ContentResolver;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.MediaStore;
-import androidx.documentfile.provider.DocumentFile;
 
 import com.getcapacitor.JSArray;
 import com.getcapacitor.JSObject;
@@ -17,9 +14,6 @@ import com.getcapacitor.PermissionState;
 import com.getcapacitor.Plugin;
 import com.getcapacitor.PluginCall;
 import com.getcapacitor.PluginMethod;
-import com.getcapacitor.PluginCall;
-import java.util.ArrayList;
-import java.util.List;
 import com.getcapacitor.annotation.CapacitorPlugin;
 import com.getcapacitor.annotation.Permission;
 import com.getcapacitor.annotation.PermissionCallback;
@@ -30,16 +24,20 @@ import org.json.JSONException;
   name = "MistMedia",
   permissions = {
     @Permission(strings = { Manifest.permission.READ_MEDIA_AUDIO }, alias = "audio13"),
-    @Permission(strings = { Manifest.permission.READ_EXTERNAL_STORAGE }, alias = "audioLegacy")
+    @Permission(strings = { Manifest.permission.READ_EXTERNAL_STORAGE }, alias = "audioLegacy"),
+    @Permission(strings = { Manifest.permission.POST_NOTIFICATIONS }, alias = "notif")
   }
 )
 public class MistMediaPlugin extends Plugin {
+    private static MistMediaPlugin instance;
+    public static MistMediaPlugin getInstance(){ return instance; }
 
     private MistMediaHelper helper;
     private PluginCall pendingScan;
 
     @Override
     public void load() {
+        instance = this;
         helper = new MistMediaHelper(getContext(), this);
     }
 
@@ -120,87 +118,103 @@ public class MistMediaPlugin extends Plugin {
                         String folder = c.getString(iBucket);
                         s.put("folder", folder != null ? folder : "Music");
                         arr.put(s);
-                    } catch (Exception ignored) {}
+                    } catch (JSONException ignored) {}
                 }
             }
         } catch (Exception e) {}
-        out.put("songs", arr);
+        try { out.put("songs", arr); } catch (JSONException ignored) {}
         return out;
+    }
+
+    // IN-APP folder list: bypasses Android Files app
+    @PluginMethod
+    public void listFolders(PluginCall call) {
+        if (!hasAudioPermission()) { call.reject("Allow music access"); return; }
+        JSObject out = new JSObject(); JSArray arr = new JSArray();
+        java.util.LinkedHashMap<String, JSObject> map = new java.util.LinkedHashMap<>();
+        ContentResolver cr = getContext().getContentResolver();
+        Uri uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        String[] proj = { MediaStore.Audio.Media.DATA, MediaStore.Audio.Media.BUCKET_DISPLAY_NAME };
+        String sel = MediaStore.Audio.Media.IS_MUSIC + "!=0";
+        try (Cursor c = cr.query(uri, proj, sel, null, null)) {
+            if (c != null) {
+                int iData = c.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA);
+                int iBucket = c.getColumnIndexOrThrow(MediaStore.Audio.Media.BUCKET_DISPLAY_NAME);
+                while (c.moveToNext()) {
+                    try {
+                        String data = c.getString(iData); String bucket = c.getString(iBucket);
+                        if (data == null) continue;
+                        String parent = data; int slash = data.lastIndexOf('/');
+                        if (slash > 0) parent = data.substring(0, slash);
+                        JSObject f = map.get(parent);
+                        if (f == null) { f = new JSObject(); f.put("folder", bucket != null ? bucket : "Music"); f.put("path", parent); f.put("count", 0); map.put(parent, f); }
+                        f.put("count", f.getInteger("count") + 1);
+                    } catch (Exception ignored) {}
+                }
+            }
+        } catch (Exception e) { call.reject(e.getMessage()); return; }
+        for (JSObject f : map.values()) arr.put(f);
+        out.put("folders", arr); call.resolve(out);
     }
 
     private static final int REQ_PICK_FOLDER = 9911;
     private PluginCall pendingPickFolder;
-
-    // REAL folder picker: shows folders with "Use this folder" button (SAF)
     @PluginMethod
     public void pickFolder(PluginCall call) {
         pendingPickFolder = call;
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
-            | Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION
-            | Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
-        try {
-            startActivityForResult(call, intent, REQ_PICK_FOLDER);
-        } catch (Exception e) {
-            pendingPickFolder = null;
-            call.reject("Cannot open folder picker: " + e.getMessage());
-        }
+        android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_OPEN_DOCUMENT_TREE);
+        intent.addFlags(android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION | android.content.Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION | android.content.Intent.FLAG_GRANT_PREFIX_URI_PERMISSION);
+        try { startActivityForResult(call, intent, REQ_PICK_FOLDER); }
+        catch (Exception e) { pendingPickFolder = null; call.reject("Cannot open folder picker: " + e.getMessage()); }
     }
-
     @Override
-    protected void handleOnActivityResult(int requestCode, int resultCode, Intent data) {
+    protected void handleOnActivityResult(int requestCode, int resultCode, android.content.Intent data) {
         super.handleOnActivityResult(requestCode, resultCode, data);
         if (requestCode != REQ_PICK_FOLDER) return;
-        PluginCall call = pendingPickFolder;
-        pendingPickFolder = null;
+        PluginCall call = pendingPickFolder; pendingPickFolder = null;
         if (call == null) return;
-        if (resultCode != Activity.RESULT_OK || data == null || data.getData() == null) {
-            call.reject("Folder not selected");
-            return;
-        }
+        if (resultCode != android.app.Activity.RESULT_OK || data == null || data.getData() == null) { call.reject("Folder not selected"); return; }
         Uri treeUri = data.getData();
+        try { getContext().getContentResolver().takePersistableUriPermission(treeUri, android.content.Intent.FLAG_GRANT_READ_URI_PERMISSION); } catch (Exception ignored) {}
+        JSObject out = new JSObject(); JSArray arr = new JSArray();
         try {
-            getContext().getContentResolver().takePersistableUriPermission(treeUri,
-                Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        } catch (Exception ignored) {}
-        JSObject out = new JSObject();
-        JSArray arr = new JSArray();
-        try {
-            DocumentFile root = DocumentFile.fromTreeUri(getContext(), treeUri);
+            androidx.documentfile.provider.DocumentFile root = androidx.documentfile.provider.DocumentFile.fromTreeUri(getContext(), treeUri);
             String folderName = (root != null && root.getName() != null) ? root.getName() : "Music";
-            out.put("folder", folderName);
-            out.put("treeUri", treeUri.toString());
+            out.put("folder", folderName); out.put("treeUri", treeUri.toString());
             if (root != null) collectAudio(root, folderName, arr);
-        } catch (Exception e) {
-            call.reject("Cannot read folder: " + e.getMessage());
-            return;
-        }
-        out.put("songs", arr);
-        call.resolve(out);
+        } catch (Exception e) { call.reject("Cannot read folder: " + e.getMessage()); return; }
+        out.put("songs", arr); call.resolve(out);
     }
-
-    private void collectAudio(DocumentFile dir, String folder, JSArray arr) {
-        DocumentFile[] files = dir.listFiles();
-        if (files == null) return;
-        for (DocumentFile f : files) {
+    private void collectAudio(androidx.documentfile.provider.DocumentFile dir, String folder, JSArray arr) {
+        androidx.documentfile.provider.DocumentFile[] files = dir.listFiles(); if (files == null) return;
+        for (androidx.documentfile.provider.DocumentFile f : files) {
             try {
                 if (f.isDirectory()) { collectAudio(f, folder, arr); continue; }
                 if (!f.isFile()) continue;
-                String name = f.getName();
-                if (name == null) continue;
+                String name = f.getName(); if (name == null) continue;
                 String lower = name.toLowerCase();
-                if (!(lower.endsWith(".mp3") || lower.endsWith(".m4a") || lower.endsWith(".aac")
-                    || lower.endsWith(".flac") || lower.endsWith(".wav") || lower.endsWith(".ogg")
-                    || lower.endsWith(".opus") || lower.endsWith(".oga") || lower.endsWith(".weba"))) continue;
-                JSObject s = new JSObject();
-                s.put("name", name);
-                s.put("uri", f.getUri().toString());
-                s.put("size", f.length());
-                s.put("folder", folder);
-                arr.put(s);
+                if (!(lower.endsWith(".mp3") || lower.endsWith(".m4a") || lower.endsWith(".aac") || lower.endsWith(".flac") || lower.endsWith(".wav") || lower.endsWith(".ogg") || lower.endsWith(".opus"))) continue;
+                JSObject s = new JSObject(); s.put("name", name); s.put("uri", f.getUri().toString()); s.put("size", f.length()); s.put("folder", folder); arr.put(s);
             } catch (Exception ignored) {}
         }
     }
+
+    // Android 13+: POST_NOTIFICATIONS must be granted or notification is hidden silently.
+    // Call this on first play - shows system "Allow Mist to send notifications?" popup
+    @PluginMethod
+    public void requestNotif(PluginCall call) {
+        if (android.os.Build.VERSION.SDK_INT < 33) { call.resolve(); return; }
+        if (androidx.core.content.ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) == android.content.pm.PackageManager.PERMISSION_GRANTED) { call.resolve(); return; }
+        // Use Capacitor permission API for POST_NOTIFICATIONS
+        try {
+            requestPermissionForAlias("notif", call, "onNotifPermission");
+        } catch (Exception e) {
+            // Fallback: open app settings is handled in JS, just resolve
+            call.resolve();
+        }
+    }
+    @PermissionCallback
+    private void onNotifPermission(PluginCall call) { call.resolve(); }
 
     @PluginMethod
     public void update(PluginCall call) {

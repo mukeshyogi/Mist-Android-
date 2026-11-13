@@ -6,14 +6,21 @@ import android.content.Intent;
 
 public class MistMediaReceiver extends BroadcastReceiver {
     @Override
-    public void onReceive(Context context, Intent intent) {
-        // Forward to MainActivity's static helper - plugin will pick it up via session callback
-        // We use MediaSession via a broadcast that MainActivity listens to is complex,
-        // so instead we send an intent to MainActivity which forwards to the plugin via JS event.
-        // Simplest: store action in shared prefs and let JS poll? No - use explicit broadcast to plugin.
-        // This receiver is wired in AndroidManifest; MainActivity registers a receiver that re-emits.
-        Intent i = new Intent("com.mist.player.MEDIA_ACTION");
-        i.putExtra("action", intent.getAction());
-        context.sendBroadcast(i);
+    public void onReceive(Context ctx, Intent intent) {
+        if (intent == null || intent.getAction() == null) return;
+        String action = intent.getAction(); // com.mist.player.PLAY / PAUSE / NEXT / PREV
+        String shortAction = action.replace("com.mist.player.", "").toLowerCase();
+        // Forward to MainActivity's receiver, which forwards to JS
+        Intent fwd = new Intent("com.mist.player.MEDIA_ACTION");
+        fwd.setPackage(ctx.getPackageName());
+        fwd.putExtra("action", action);
+        try { ctx.sendBroadcast(fwd); } catch (Exception ignored) {}
+        // Also wake the service so notification stays alive
+        try {
+            Intent svc = new Intent(ctx, MistMediaService.class);
+            svc.setAction(action);
+            if (android.os.Build.VERSION.SDK_INT >= 26) ctx.startForegroundService(svc);
+            else ctx.startService(svc);
+        } catch (Exception ignored) {}
     }
 }
