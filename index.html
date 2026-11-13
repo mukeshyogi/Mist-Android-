@@ -515,8 +515,21 @@ const CAP=window.Capacitor;
 const DESK=window.mistDesk||null;
 let loadTok=0;
 const NATIVE=!!(CAP&&CAP.isNativePlatform&&CAP.isNativePlatform());
-const MM=NATIVE?CAP.registerPlugin('MistMedia'):null;
-const AppP=NATIVE?CAP.registerPlugin('App'):null;
+function mistGetPlugin(name){
+  try{
+    if(!CAP) return null;
+    // Capacitor 6: plugins live at CAP.Plugins.<Name>
+    if(CAP.Plugins && CAP.Plugins[name]) return CAP.Plugins[name];
+    // Older Capacitor: registerPlugin
+    if(typeof CAP.registerPlugin==='function') return CAP.registerPlugin(name);
+    // Fallback via global Capacitor
+    if(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins[name]) return window.Capacitor.Plugins[name];
+  }catch(e){ console.warn('[Mist] getPlugin failed', name, e); }
+  return null;
+}
+const MM=NATIVE?mistGetPlugin('MistMedia'):null;
+const AppP=NATIVE?mistGetPlugin('App'):null;
+console.log('[Mist] NATIVE=',NATIVE,'MM=',!!MM,'App=',!!AppP);
 const audio=new Audio();audio.preload='auto';
 let curUrl=null,saveT=null,sleepT=null,lp=null,toastT=null;
 const SORTS=[['title','Title, A to Z'],['titleDesc','Title, Z to A'],['artist','Artist, A to Z'],['recent','Recently added'],['short','Shortest first'],['long','Longest first']];
@@ -909,7 +922,7 @@ function startAt(i){
   const id=S.queue[i],s=S.byId.get(id);if(!s)return;
   S.qi=i;loadTok++;
   if(curUrl){URL.revokeObjectURL(curUrl);curUrl=null}
-  if(s.path&&CAP)audio.src=CAP.convertFileSrc('file://'+encodeURI(s.path).replace(/[#?]/g,c=>encodeURIComponent(c)));
+  if(s.path&&CAP){ try{ audio.src=(CAP.convertFileSrc?CAP.convertFileSrc('file://'+encodeURI(s.path).replace(/[#?]/g,c=>encodeURIComponent(c))):('file://'+s.path)); }catch(e){ audio.src='file://'+s.path; } }
   else if(s.path&&DESK){audio.pause();deskLoad(s,loadTok)}
   else{curUrl=URL.createObjectURL(s.file);audio.src=curUrl}
   if(!(s.path&&DESK&&!CAP)){const pr=audio.play();if(pr&&pr.catch)pr.catch(()=>{setPlayBtn()});}
