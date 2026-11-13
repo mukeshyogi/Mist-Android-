@@ -1,0 +1,63 @@
+{
+  "name": "mist-player",
+  "version": "2.2.0",
+  "description": "Mist - offline music player",
+  "author": "Mist",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "prep": "node prep.js",
+    "build": "node prep.js && electron-builder --win nsis portable --x64",
+    "build:web": "node scripts/copy-web.js",
+    "android:sync": "npm run build:web && npx cap sync android",
+    "android:open": "npx cap open android",
+    "android:run": "npm run android:sync && npx cap run android"
+  },
+  "build": {
+    "appId": "com.mist.player",
+    "productName": "Mist",
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html",
+      "icon.png",
+      "icon.ico",
+      "fonts/**"
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "icon.ico",
+      "signAndEditExecutable": true
+    },
+    "portable": {
+      "artifactName": "Mist-Portable.exe"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Mist",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false,
+      "artifactName": "Mist-Setup.exe"
+    }
+  },
+  "devDependencies": {
+    "@fontsource/ibm-plex-mono": "^5.1.0",
+    "@fontsource/lora": "^5.1.0",
+    "electron": "^31.7.7",
+    "electron-builder": "^24.13.3",
+    "@capacitor/cli": "^6.1.2"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/app": "^6.0.1",
+    "@capacitor/core": "^6.1.2",
+    "@capacitor/haptics": "^6.0.1",
+    "@capacitor/status-bar": "^6.0.1"
+  }
+}
