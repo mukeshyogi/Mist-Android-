@@ -114,11 +114,11 @@ public class MistMediaPlugin extends Plugin {
                         String folder = c.getString(iBucket);
                         s.put("folder", folder != null ? folder : "Music");
                         arr.put(s);
-                    } catch (JSONException ignored) {}
+                    } catch (Exception ignored) {}
                 }
             }
         } catch (Exception e) {}
-        try { out.put("songs", arr); } catch (JSONException ignored) {}
+        out.put("songs", arr);
         return out;
     }
 

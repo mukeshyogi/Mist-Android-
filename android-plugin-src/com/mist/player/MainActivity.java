@@ -14,11 +14,7 @@ public class MainActivity extends BridgeActivity {
             String a = intent.getStringExtra("action");
             if (a == null) return;
             String action = a.replace("com.mist.player.", "").toLowerCase();
-            // JS expects: MM.addListener('action', e => e.action === 'play'/'pause'/'next'/'prev')
-            // We dispatch via webview JS to keep it simple and reliable:
             String js = "(function(){try{window.dispatchEvent(new CustomEvent('mist-media-action',{detail:'" + action + "'}))}catch(e){}})()";
-            // Also try to call the plugin's notifyListeners via bridge is not public, so use JS bridge:
-            // index.html already listens to MM 'action' - we shim it below in JS by mapping this event.
             getBridge().getWebView().post(() -> getBridge().getWebView().evaluateJavascript(js, null));
         }
     };
@@ -33,7 +29,8 @@ public class MainActivity extends BridgeActivity {
             registerReceiver(mediaReceiver, f);
         }
     }
-    @Override protected void onDestroy() {
+    // FIX: must be public, not protected, to override BridgeActivity.onDestroy()
+    @Override public void onDestroy() {
         try { unregisterReceiver(mediaReceiver); } catch (Exception ignored) {}
         super.onDestroy();
     }
