@@ -209,118 +209,58 @@ html.playing .pb{animation:breathe 2.6s ease-in-out infinite}
 .bt{animation:titleIn .55s var(--spring)}
 @media (hover:hover){.row:hover .rt{transform:translateX(5px)}.row:active:hover .rt{transform:translateX(5px) scale(.98)}}
 
-/* ---------- theme: burnt paper ---------- */
-@property --r{syntax:'<length>';inherits:false;initial-value:0px}
-:root[data-theme="burnt"]{
-  --bg:#E8D4A2; --ink:#2A180B; --sub:#7B6240; --line:#C8AD76; --dim:#A68D5A; --ink-rgb:42,24,11;
-  --vig:rgba(120,58,12,.26); --gl:block; --gd:none; color-scheme:light}
-.fx.burn,.fx.ember,.fx.stain,.fx.ash{display:none}
-html[data-theme="burnt"] .fx.burn,html[data-theme="burnt"] .fx.ember,html[data-theme="burnt"] .fx.stain,html[data-theme="burnt"] .fx.ash{display:block}
-/* coffee stains, fold creases - drifting very slowly */
-.fx.stain{inset:0;background:radial-gradient(ellipse 40% 25% at 18% 24%,rgba(140,84,20,.14),transparent 70%),radial-gradient(ellipse 32% 22% at 82% 68%,rgba(120,70,16,.12),transparent 72%);contain:strict}
-/* scorched, ragged edges */
-.fx.burn{inset:0;contain:strict;will-change:opacity;
-  /* SCREEN-FIT BURN: 4 fixed edges + 4 corners, NOT one big ellipse.
-     Old code used ellipse 120% - on tall phones the dark part fell OFF-screen,
-     so you only saw the middle yellow. This version pins burn to the actual edges. */
-  --burn:var(--burn-size,34px);
-  background:
-    /* corners - darkest, always visible */
-    radial-gradient(circle at 0 0, rgba(18,7,1,.92) 0, rgba(50,20,3,.70) 38%, transparent 70%),
-    radial-gradient(circle at 100% 0, rgba(18,7,1,.92) 0, rgba(50,20,3,.70) 38%, transparent 70%),
-    radial-gradient(circle at 0 100%, rgba(18,7,1,.92) 0, rgba(50,20,3,.70) 38%, transparent 70%),
-    radial-gradient(circle at 100% 100%, rgba(18,7,1,.92) 0, rgba(50,20,3,.70) 38%, transparent 70%),
-    /* top edge */
-    linear-gradient(to bottom, rgba(26,10,2,.85) 0, rgba(96,48,8,.55) 42%, rgba(96,48,8,.18) 78%, transparent 100%),
-    /* bottom edge */
-    linear-gradient(to top, rgba(26,10,2,.85) 0, rgba(96,48,8,.55) 42%, rgba(96,48,8,.18) 78%, transparent 100%),
-    /* left edge */
-    linear-gradient(to right, rgba(26,10,2,.80) 0, rgba(96,48,8,.50) 42%, rgba(96,48,8,.15) 78%, transparent 100%),
-    /* right edge */
-    linear-gradient(to left, rgba(26,10,2,.80) 0, rgba(96,48,8,.50) 42%, rgba(96,48,8,.15) 78%, transparent 100%);
-  background-repeat:no-repeat;
-  background-size:calc(var(--burn)*3.2) calc(var(--burn)*3.2),calc(var(--burn)*3.2) calc(var(--burn)*3.2),calc(var(--burn)*3.2) calc(var(--burn)*3.2),calc(var(--burn)*3.2) calc(var(--burn)*3.2),100% var(--burn),100% var(--burn),var(--burn) 100%,var(--burn) 100%;
-  background-position:0 0,100% 0,0 100%,100% 100%,top left,bottom left,top left,top right;
-}
-/* glowing ember line riding the burn - flickers (opacity only: runs on the GPU) */
-.fx.ember{inset:0;animation:emberFlick 5s ease-in-out infinite;will-change:opacity;contain:strict;
-  --burn:var(--burn-size,34px);
-  background:
-    linear-gradient(to bottom, transparent 0, rgba(255,150,40,.22) calc(var(--burn)*0.55), transparent var(--burn)),
-    linear-gradient(to top, transparent 0, rgba(255,150,40,.22) calc(var(--burn)*0.55), transparent var(--burn)),
-    linear-gradient(to right, transparent 0, rgba(255,128,30,.20) calc(var(--burn)*0.55), transparent var(--burn)),
-    linear-gradient(to left, transparent 0, rgba(255,128,30,.20) calc(var(--burn)*0.55), transparent var(--burn));
-  background-repeat:no-repeat; background-size:100% var(--burn),100% var(--burn),var(--burn) 100%,var(--burn) 100%;
-  background-position:top left,bottom left,top left,top right;
-}
-@keyframes emberFlick{0%{opacity:.55}7%{opacity:.95}
-/* --- BURNT PERFORMANCE FIX: no expensive filters / shadows on mobile --- */
-html[data-theme="burnt"] .app{text-shadow:none}
-html[data-theme="burnt"] .fx{transform:translateZ(0);backface-visibility:hidden}
-html[data-theme="burnt"] .fx.vig{box-shadow:none;background:radial-gradient(ellipse 130% 130% at 50% 50%,transparent 58%,rgba(120,58,12,.16) 100%)}
-html[data-theme="burnt"] .dlg{box-shadow:4px 4px 0 var(--ink)}
-html[data-theme="burnt"] .fx.gl,html[data-theme="burnt"] .fx.gd{display:none} /* grain SVG filter is the biggest GPU cost - burnt already has texture */
-html[data-theme="burnt"] .th .disc.y::after{animation:none}
-@media (max-width:600px){ html[data-theme="burnt"] .fx.ember{animation-duration:7s;opacity:.6} }
-12%{opacity:.6}23%{opacity:1}31%{opacity:.7}44%{opacity:.92}52%{opacity:.58}63%{opacity:1}71%{opacity:.75}86%{opacity:.98}100%{opacity:.55}}
-.fx.ash{width:100%;height:100%}
-html[data-theme="burnt"] body{text-shadow:none}
-/* plain (non-blended) grain: a multiply blend over animated layers was the main cause of lag */
-html[data-theme="burnt"] .fx.gl{mix-blend-mode:normal;opacity:.30}
-html[data-theme="burnt"] h1{text-shadow:0 1px 0 rgba(255,226,160,.55),0 0 1px rgba(60,25,5,.55)}
-html[data-theme="burnt"] .dlg{box-shadow:inset 0 0 28px rgba(120,58,12,.40),4px 4px 0 var(--ink)}
-html[data-theme="burnt"] .bar{box-shadow:inset 0 10px 18px -12px rgba(120,58,12,.45)}
-/* the playing song smoulders */
-html[data-theme="burnt"] .row.cur::before{background:linear-gradient(#ffc15a,#ff6a00 55%,#b23a00);box-shadow:0 0 10px 1px rgba(255,110,20,.85)}
-html[data-theme="burnt"] .row.cur::after{background:linear-gradient(90deg,rgba(255,130,30,.34),rgba(255,130,30,0) 88%);opacity:1}
-html[data-theme="burnt"] .pb{position:relative}
-html.playing[data-theme="burnt"] .pb{animation:none}
-html.playing[data-theme="burnt"] .pb::after{content:"";position:absolute;inset:-2px;border-radius:50%;box-shadow:0 0 16px 4px rgba(255,140,30,.7);pointer-events:none;opacity:.15;will-change:transform,opacity;animation:emberGlow 2.2s ease-in-out infinite}
-@keyframes emberGlow{0%,100%{opacity:.15;transform:scale(1)}50%{opacity:.95;transform:scale(1.2)}}
-/* screens unroll like a scroll */
-html[data-theme="burnt"] .main{animation:unroll .95s var(--soft) backwards}
-@keyframes unroll{from{clip-path:inset(0 0 100% 0);transform:translateY(-14px);opacity:.25}60%{opacity:1}to{clip-path:inset(0 0 0 0);transform:none}}
-@media (hover:hover){html[data-theme="burnt"] .row:hover{background:linear-gradient(90deg,rgba(255,150,50,.14),transparent 70%)}}
-/* every tap leaves a scorch ring */
-.scorch{position:fixed;width:14px;height:14px;margin:-7px 0 0 -7px;border-radius:50%;pointer-events:none;z-index:99998;border:2px solid rgba(255,140,40,.95);box-shadow:0 0 14px 3px rgba(255,110,20,.55),inset 0 0 8px rgba(255,200,100,.6);animation:scorch .8s cubic-bezier(.2,.7,.2,1) forwards}
-@keyframes scorch{from{transform:scale(.3);opacity:1}to{transform:scale(7.5);opacity:0}}
-/* burning wave when the theme is switched */
-.burnring{position:fixed;z-index:99999;pointer-events:none;border-radius:50%;view-transition-name:burnring;will-change:transform;background:radial-gradient(circle closest-side,transparent 0,transparent 78%,rgba(255,238,176,.95) 85%,#ffb52e 88%,#ff5a00 89.3%,#5a1c00 93%,rgba(30,10,0,.6) 97%,transparent 100%)}
-::view-transition-old(root),::view-transition-new(root){animation:none;mix-blend-mode:normal}
-::view-transition-group(burnring),::view-transition-new(burnring){animation:none}
-::view-transition-old(burnring){display:none}
-/* the third theme disc */
-.th .disc.y{position:relative;background:radial-gradient(circle,rgba(42,24,11,.18) 1px,transparent 1.6px) 0 0/9px 9px,radial-gradient(circle at 50% 50%,#EBD9A6 0 52%,#D3B06A 70%,#8a4410 88%,#2A1202 100%);color:#2A180B}
-.th .disc.y::after{content:"";position:absolute;inset:-3px;border-radius:50%;box-shadow:0 0 12px 2px rgba(255,120,20,.55);animation:emberFlick 3.3s linear infinite;pointer-events:none}
-.themes{gap:22px}
-@media (max-width:440px){.themes{gap:12px}.th .disc{width:70px;height:70px}.th{font-size:11.5px}}
+/* Paper Black AMOLED */
 
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
-.main{animation:enter .55s var(--spring) backwards}
-.rail{animation:fadeIn .3s backwards}
-.list.in .row{animation:rowIn .5s var(--spring) backwards;animation-delay:calc(var(--i,0)*26ms)}
-.plist .prow,.sets>*{animation:rowIn .5s var(--spring) backwards;animation-delay:calc(var(--i,0)*40ms)}
-.fab button.spin svg{animation:spin .8s var(--spring)}
-.pb.pop svg{animation:pop .45s var(--spring)}
-.dlg{animation:enter .5s var(--spring)}
-.scrim{animation:fadeIn .25s}
-.toast{animation:toastIn .5s var(--spring)}
-
-/* --- BURNT SCREEN-FIT: auto size for any phone / PC --- */
-html[data-theme="burnt"]{ --burn-size:34px; }
-@media (max-width:600px){ html[data-theme="burnt"]{ --burn-size:26px; } }
-@media (max-width:380px){ html[data-theme="burnt"]{ --burn-size:22px; } }
-@media (min-width:900px){ html[data-theme="burnt"]{ --burn-size:44px; } }
-/* Tall phones: burn must not be squeezed - keep edges visible */
-@media (max-aspect-ratio: 9/16){ html[data-theme="burnt"]{ --burn-size:30px; } }
-/* Never clip the burn: app must fill viewport, no rounded outer cut */
-html[data-theme="burnt"] body{ background:#2A1202; }
-html[data-theme="burnt"] .app{ border-radius:0; overflow:hidden; }
-@media (max-width:600px){ html[data-theme="burnt"] .app{ border:none; box-shadow:none; } }
-/* Outer burnt frame - always on top of everything, shows even when scrolling */
-html[data-theme="burnt"] body::after{ content:""; position:fixed; inset:0; z-index:9998; pointer-events:none;
-  box-shadow: inset 0 0 0 2px rgba(18,7,1,.55), inset 0 0 28px rgba(18,7,1,.35);
+/* --- PAPER BLACK -> AMOLED (same name, just darker) --- */
+:root[data-theme="paperblack"], :root[data-theme="paper-black"], :root[data-theme="black"], html[data-theme="paperblack"]{
+  --bg:#000000; --card:#0A0A0A; --ink:#F5F5F5; --sub:#9A9A9A; --line:#1F1F1F; --dim:#2A2A2A;
+  --ink-rgb:245,245,245; --vig:rgba(0,0,0,.6); color-scheme:dark;
 }
+html[data-theme="paperblack"] body, html[data-theme="paper-black"] body, html[data-theme="black"] body{ background:#000000; }
+html[data-theme="paperblack"] .app, html[data-theme="paper-black"] .app, html[data-theme="black"] .app{ background:#000000; }
+html[data-theme="paperblack"] .row, html[data-theme="paper-black"] .row{ background:#0A0A0A; border-color:#1A1A1A; }
+html[data-theme="paperblack"] .bar, html[data-theme="paper-black"] .bar{ background:#050505; border-top:1px solid #1F1F1F; }
+html[data-theme="paperblack"] .dlg, html[data-theme="paper-black"] .dlg{ background:#0A0A0A; }
+html[data-theme="paperblack"] .fx.gl, html[data-theme="paperblack"] .fx.gd{ display:none; }
+html[data-theme="paperblack"] .fx.vig{ background:radial-gradient(ellipse 120% 120% at 50% 50%, transparent 70%, rgba(0,0,0,.5) 100%); }
+
+
+/* --- PAPER GRAINS for Paper Black AMOLED (subtle, static, no lag) --- */
+/* Uses a tiny SVG noise tile - 120px, repeats, opacity 0.06. No animation, no blur, no blend that costs GPU. */
+html[data-theme="paperblack"] body::before,
+html[data-theme="paper-black"] body::before,
+html[data-theme="black"] body::before{
+  content:""; position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.55;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.10'/%3E%3C/svg%3E");
+  background-size:140px 140px;
+  /* Paper fibres - a few faint streaks, very low opacity */
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.10'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse 60% 1px at 20% 30%, rgba(255,255,255,.05), transparent 70%),
+    radial-gradient(ellipse 80% 1px at 70% 60%, rgba(255,255,255,.04), transparent 70%),
+    radial-gradient(ellipse 50% 1px at 40% 80%, rgba(255,255,255,.045), transparent 70%);
+}
+/* Grain must sit BEHIND content, not over text - keep app above it */
+html[data-theme="paperblack"] .app,
+html[data-theme="paper-black"] .app,
+html[data-theme="black"] .app{ position:relative; z-index:2; }
+/* Cards get a whisper of grain too, so they don't look flat plastic */
+html[data-theme="paperblack"] .row,
+html[data-theme="paper-black"] .row{
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  background-size:120px 120px;
+  background-color:#0A0A0A;
+}
+/* Dialog / bar also get grain */
+html[data-theme="paperblack"] .dlg,
+html[data-theme="paper-black"] .dlg{
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='0.06'/%3E%3C/svg%3E");
+  background-size:120px 120px;
+}
+/* Make sure grain doesn't make text blurry or slow: no filter, no animation */
+html[data-theme="paperblack"] body::before{ filter:none; animation:none; mix-blend-mode:normal; }
 
 /* --- CONTINUOUS scan progress (one bar, no flicker) --- */
 #scanProgress{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:9999;width:min(320px,calc(100% - 40px));background:var(--bg);border:1.5px solid var(--ink);box-shadow:4px 4px 0 var(--ink);padding:12px 14px;display:none}
@@ -626,14 +566,14 @@ function filtered(items){const q=S.search.trim().toLowerCase();return q?items.fi
 function applyTheme(){
   let t=null;try{t=localStorage.getItem('mist-theme')}catch(e){}
   const r=document.documentElement;
-  if(t==='light'||t==='dark'||t==='burnt')r.setAttribute('data-theme',t);else r.removeAttribute('data-theme');
+  if(t==='light'||t==='dark'||t==='paperblack')r.setAttribute('data-theme',t);else r.removeAttribute('data-theme');
   const cs=document.getElementById('cs'),tc=document.getElementById('tc');
-  if(cs)cs.setAttribute('content',t==='burnt'?'light':(t==='light'||t==='dark'?t:'light dark'));
+  if(cs)cs.setAttribute('content',t==='paperblack'?'light':(t==='light'||t==='dark'?t:'light dark'));
   const tn=themeNow();
-  if(tc)tc.setAttribute('content',tn==='dark'?'#0F0F0E':(tn==='burnt'?'#E8D4A2':'#F7F6F2'));
-  ashToggle(tn==='burnt');
+  if(tc)tc.setAttribute('content',tn==='dark'?'#0F0F0E':(tn==='paperblack'?'#E8D4A2':'#F7F6F2'));
+  ashToggle(tn==='paperblack');
 }
-/* ---- burnt paper: drifting embers and ash ---- */
+/* ---- Paper Black AMOLED ---- */
 const ASH={cv:null,cx:null,ps:[],raf:0,on:false,t0:0,spr:null};
 function ashSprite(){
   const c=document.createElement('canvas');c.width=c.height=32;const x=c.getContext('2d');
@@ -694,8 +634,8 @@ function setThemeAnim(v,input){
   if(reduce){apply();return}
   const dur=1300,ease='cubic-bezier(.45,.05,.25,1)';
   let ring=null;
-  if(v==='burnt'){
-    ring=document.createElement('div');ring.className='burnring';
+  if(v==='paperblack'){
+    ring=document.createElement('div');ring.className='';
     const D=2*R*1.12;
     ring.style.width=ring.style.height=D+'px';ring.style.left=(x-D/2)+'px';ring.style.top=(y-D/2)+'px';
     ring.style.transform='scale(0)';document.body.appendChild(ring);
@@ -711,11 +651,11 @@ function setThemeAnim(v,input){
     vt.finished.finally(()=>{if(ring)setTimeout(()=>ring.remove(),200)});
   }else{apply();runRing()}
 }
-/* ---- scorch ring on every tap (burnt theme only) ---- */
+/* ---- tap ring ---- */
 document.addEventListener('pointerdown',e=>{
-  if(document.documentElement.getAttribute('data-theme')!=='burnt')return;
+  if(document.documentElement.getAttribute('data-theme')!=='paperblack')return;
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-  const d=document.createElement('div');d.className='scorch';d.style.left=e.clientX+'px';d.style.top=e.clientY+'px';
+  const d=document.createElement('div');d.className='';d.style.left=e.clientX+'px';d.style.top=e.clientY+'px';
   d.addEventListener('animationend',()=>d.remove());document.body.appendChild(d);
 },true);
 function themeNow(){const a=document.documentElement.getAttribute('data-theme');if(a)return a;return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'}
@@ -831,7 +771,7 @@ function settingsHtml(){
   h+='<section class="sec" style="--i:0"><h2>Theme</h2><div class="themes" role="radiogroup" aria-label="Theme">'
     +'<label class="th"><input type="radio" name="theme" value="light" data-set="theme"'+(th==='light'?' checked':'')+'><span class="disc w">'+sv(IC.check,30)+'</span><span>Paper white</span></label>'
     +'<label class="th"><input type="radio" name="theme" value="dark" data-set="theme"'+(th==='dark'?' checked':'')+'><span class="disc b">'+sv(IC.check,30)+'</span><span>Paper black</span></label>'
-    +'<label class="th"><input type="radio" name="theme" value="burnt" data-set="theme"'+(th==='burnt'?' checked':'')+'><span class="disc y">'+sv(IC.check,30)+'</span><span>Burnt paper</span></label></div></section>';
+    +'</div></section>';
   let sc='<div class="srcs">';
   const names=Object.keys(src),blob={};S.songs.forEach(x=>{if(!x.path||DESK)blob[x.source]=true});
   if(!names.length)sc+='<p class="note">No music added yet.</p>';
@@ -1006,20 +946,39 @@ function startAt(i){
 }
 let _notifAsked=false;
 async function askNotif(){
-  if(_notifAsked||!NATIVE||!MM) return; _notifAsked=true;
+  if(_notifAsked||!NATIVE) return; _notifAsked=true;
+  const hasMM = !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.MistMedia);
+  if(!hasMM){ console.log('Mist: MM bridge missing, notification will use Web MediaSession only'); return; }
   try{ if(MM.requestNotif) await MM.requestNotif(); }catch(e){}
+  // Also set Web MediaSession so lockscreen shows even if native fails
+  try{
+    if('mediaSession' in navigator){
+      navigator.mediaSession.metadata = new MediaMetadata({title: (curSong()&&curSong().title)||'Mist', artist: (curSong()&&curSong().artist)||'Mist', album:'Mist'});
+      navigator.mediaSession.setActionHandler('play', ()=>playResume());
+      navigator.mediaSession.setActionHandler('pause', ()=>pauseSong());
+      navigator.mediaSession.setActionHandler('nexttrack', ()=>next());
+      navigator.mediaSession.setActionHandler('previoustrack', ()=>prev());
+    }
+  }catch(e){}
 }
 let _lastSync=0;
 function nativeSyncThrottled(){
   const now=Date.now(); if(now-_lastSync<1000) return; _lastSync=now; nativeSync();
 }
 function nativeSync(){
-  if(!MM)return;
+  // Update Web MediaSession (works even without native plugin - shows on lockscreen in WebView)
+  try{
+    if('mediaSession' in navigator){
+      const s=curSong();
+      if(s){ navigator.mediaSession.metadata=new MediaMetadata({title:s.title, artist:s.artist, album:'Mist'}); }
+      navigator.mediaSession.playbackState = audio.paused ? 'paused' : 'playing';
+    }
+  }catch(e){}
+  if(!MM) return;
   askNotif();
-  const s=curSong();
-  if(!s){MM.stop().catch(()=>{});return}
+  const s=curSong(); if(!s){ try{MM.stop().catch(()=>{});}catch(e){} return; }
   const d=isFinite(audio.duration)&&audio.duration>0?audio.duration:s.dur;
-  MM.update({title:s.title,artist:s.artist,playing:!audio.paused,position:Math.round((audio.currentTime||0)*1000),duration:Math.round((d||0)*1000)}).catch(()=>{});
+  try{ MM.update({title:s.title,artist:s.artist,playing:!audio.paused,position:Math.round((audio.currentTime||0)*1000),duration:Math.round((d||0)*1000)}).catch(()=>{}); }catch(e){}
 }
 audio.addEventListener('timeupdate',()=>{ if(!audio.paused) nativeSyncThrottled(); });
 audio.addEventListener('play',()=>{ askNotif(); nativeSync(); });
@@ -1107,21 +1066,6 @@ function getDur(file){
   });
 }
 /* --- Continuous progress: update bar, don't rebuild toast every song --- */
-/* --- BURNT auto-fit: set burn size from real screen size --- */
-function fitBurnt(){
-  if(document.documentElement.getAttribute('data-theme')!=='burnt') return;
-  const w=window.innerWidth, h=window.innerHeight;
-  const shortest=Math.min(w,h);
-  // Burn = ~6% of shortest side, clamped 20-46px - works on any phone/PC
-  const burn=Math.max(20, Math.min(46, Math.round(shortest*0.062)));
-  document.documentElement.style.setProperty('--burn-size', burn+'px');
-}
-window.addEventListener('resize', fitBurnt);
-window.addEventListener('orientationchange', ()=>setTimeout(fitBurnt, 150));
-// Re-fit whenever theme changes
-const _burnObs=new MutationObserver(fitBurnt);
-_burnObs.observe(document.documentElement, {attributes:true, attributeFilter:['data-theme']});
-setTimeout(fitBurnt, 100);
 let _spLast=0;
 function showScanProgress(total, label){ const el=$('#scanProgress'); if(!el) return; el.classList.add('show'); $('#spLabel').textContent=label||'Adding songs…'; $('#spCount').textContent='0 / '+total; $('#spFill').style.width='0%'; $('#spSub').textContent=''; _spLast=0; }
 function updateScanProgress(i, total, name){ const now=performance.now(); if(now-_spLast<120 && i<total) return; _spLast=now; const el=$('#scanProgress'); if(!el) return; $('#spCount').textContent=i+' / '+total; $('#spFill').style.width=Math.round((i/total)*100)+'%'; if(name) $('#spSub').textContent=name; }
@@ -1165,19 +1109,57 @@ async function ingest(fileList){
 }
 /* --- NATIVE Add Folder: real folder picker (SAF) --- */
 async function nativePickFolder(){
-  if(!MM) return;
-  // NEW: Show Mist's own folder list - never opens Android Files app
-  if(MM.listFolders){
+  // DEBUG: show if native bridge is connected - if this says "Bridge OFF", APK is old / plugin not registered
+  const hasMM = !!(window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.MistMedia);
+  const MM2 = hasMM ? window.Capacitor.Plugins.MistMedia : null;
+  if(!hasMM || !MM2){
+    toast('Native bridge OFF - reinstall new APK, old APK has no folder picker', {ms:3000});
+    $('#dirIn').click(); return;
+  }
+  // TIER 1: listFolders (fastest, in-app list)
+  if(MM2.listFolders){
     try{
-      const r=await MM.listFolders();
+      const r=await MM2.listFolders();
       const folders=(r&&r.folders)||[];
       if(folders.length){ showFolderPicker(folders); return; }
-    }catch(e){ /* fall through to SAF */ }
+    }catch(e){ /* fall to tier 2 */ }
   }
-  // Fallback: SAF picker (old path)
-  showScanProgress(1, 'Opening folder…');
-  let r;
-  try{ r=await MM.pickFolder(); }catch(e){ hideScanProgress(); toast(e&&e.message?String(e.message).replace('Folder not selected','No folder selected'):'No folder selected'); return; }
+  // TIER 2: scan + group by folder (works even if listFolders is missing)
+  if(MM2.scan){
+    try{
+      const r=await MM2.scan();
+      const list=(r&&r.songs)||[];
+      if(list.length){
+        const map={};
+        list.forEach(x=>{ const k=x.folder||'Music'; if(!map[k]) map[k]={folder:k, path:(x.path||'').split('/').slice(0,-1).join('/'), count:0}; map[k].count++; });
+        const folders=Object.values(map);
+        if(folders.length){ showFolderPicker(folders); return; }
+      }
+    }catch(e){ /* fall to tier 3 */ }
+  }
+  // TIER 3: SAF picker
+  if(MM2.pickFolder){
+    showScanProgress(1, 'Opening folder…');
+    let r;
+    try{ r=await MM2.pickFolder(); }catch(e){ hideScanProgress(); toast('No folder selected'); return; }
+    const list=(r&&r.songs)||[], folder=(r&&r.folder)||'Music';
+    if(!list.length){ hideScanProgress(); toast('No songs in this folder'); return; }
+    showScanProgress(list.length, 'Adding from '+folder+'…');
+    let n=0, i=0;
+    for(const x of list){
+      i++; updateScanProgress(i, list.length, x.name||'');
+      const id='saf:'+x.uri; if(S.byId.has(id)) continue;
+      const base=(x.name||'Untitled').replace(/\.[a-z0-9]+$/i,'');
+      const s={id:id,title:base,artist:'Unknown artist',dur:0,added:Date.now()+i,plays:0,source:folder,path:x.uri};
+      addMem(s); DB.put(s); n++; if(n%20===0) refresh();
+    }
+    hideScanProgress(); save(); refresh();
+    toast(n?'Added '+n+(n===1?' song':' songs')+' from '+folder:'Those songs are already here');
+    return;
+  }
+  // Last resort: file picker (songs only, but at least works)
+  $('#dirIn').click();
+}
   const list=(r&&r.songs)||[], folder=(r&&r.folder)||'Music';
   if(!list.length){ hideScanProgress(); toast('No songs in this folder'); return; }
   showScanProgress(list.length, 'Adding from '+folder+'…');
@@ -1831,7 +1813,7 @@ let fitT=null;
 function refit(){fit();clearTimeout(fitT);fitT=setTimeout(()=>{fit();if(S.view.k==='list')renderList()},200)}
 window.addEventListener('resize',refit);window.addEventListener('orientationchange',refit);
 try{if(screen.orientation&&screen.orientation.unlock)screen.orientation.unlock()}catch(e){}
-document.addEventListener('visibilitychange',()=>{if(document.hidden){ASH.on=false;cancelAnimationFrame(ASH.raf)}else if(themeNow()==='burnt')ashToggle(true);if(!document.hidden)updateTime()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){ASH.on=false;cancelAnimationFrame(ASH.raf)}else if(themeNow()==='paperblack')ashToggle(true);if(!document.hidden)updateTime()});
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(S.view.k==='settings')renderScreen()})}catch(e){}
 
 /* ---------- boot ---------- */
