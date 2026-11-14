@@ -227,10 +227,11 @@ html[data-theme="paperblack"] .fx.vig{ background:radial-gradient(ellipse 120% 1
 
 /* --- PAPER GRAINS for Paper Black AMOLED (subtle, static, no lag) --- */
 /* Uses a tiny SVG noise tile - 120px, repeats, opacity 0.06. No animation, no blur, no blend that costs GPU. */
+html[data-theme="paperblack"] .app{ position:relative; z-index:2; }
 html[data-theme="paperblack"] body::before,
 html[data-theme="paper-black"] body::before,
 html[data-theme="black"] body::before{
-  content:""; position:fixed; inset:0; z-index:1; pointer-events:none; opacity:.55;
+  content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.55;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.10'/%3E%3C/svg%3E");
   background-size:140px 140px;
   /* Paper fibres - a few faint streaks, very low opacity */
@@ -1159,22 +1160,6 @@ async function nativePickFolder(){
   }
   // Last resort: file picker (songs only, but at least works)
   $('#dirIn').click();
-}
-  const list=(r&&r.songs)||[], folder=(r&&r.folder)||'Music';
-  if(!list.length){ hideScanProgress(); toast('No songs in this folder'); return; }
-  showScanProgress(list.length, 'Adding from '+folder+'…');
-  let n=0, i=0;
-  for(const x of list){
-    i++; updateScanProgress(i, list.length, x.name||'');
-    const id='saf:'+x.uri; if(S.byId.has(id)) continue;
-    // Title from filename, strip extension
-    const base=(x.name||'Untitled').replace(/\.[a-z0-9]+$/i,'');
-    const s={id:id,title:base,artist:'Unknown artist',dur:0,added:Date.now()+i,plays:0,source:folder,path:x.uri};
-    addMem(s); DB.put(s); n++;
-    if(n%20===0) refresh();
-  }
-  hideScanProgress(); save(); refresh();
-  toast(n?'Added '+n+(n===1?' song':' songs')+' from '+folder:'Those songs are already here');
 }
 function escapeHtml(s){return String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function showFolderPicker(folders){
